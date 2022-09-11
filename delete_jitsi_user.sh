@@ -1,5 +1,5 @@
 #! /bin/bash
-read -p "Enter username" USER_NAME
+read -p "Enter username: " USER_NAME
 read -p "Are you sure you want to delete the user $USER_NAME? (Y/N)" U_SURE
 
 if [[ "$U_SURE" != "Y" || "$U_SURE" != "y" ]]; then
