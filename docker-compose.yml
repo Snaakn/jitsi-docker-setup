@@ -1,63 +1,26 @@
-version: '3'
-
+version: "3.9"
 services:
   livekit:
-    image: livekit/livekit-server:vfix-node-ip-SNAPSHOT
-    restart: always
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
     ports:
       - '7880:7880'
       - '7881:7881'
       - '7882:7882/udp'
+      - '8443:443'
     expose:
       - 7880
       - 7881
       - '7882/udp'
       - '50000-60000/udp'
+      
+  redis:
+    image: redis:6-alpine
+    command: redis-server /etc/redis.conf
+    network_mode: "host"
     volumes:
-      - './livekit.yaml:/livekit.yaml'
-    command: "--config /livekit.yaml --dev --node-ip 127.0.0.1"
-  frontend:
-    build:
-      context: ./packages/frontend
-    depends_on:
-      - backend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./packages/frontend/src:/app/src
-    environment:
-      - LC_BACKEND_PATH=http://backend:8080
-      - LC_SOCKET_PATH=http://localhost:8080
-      - LC_CONTAINER=true
-  nats:
-    image: nats:latest
-    ports:
-      - "8222:8222"
-    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --http_port 8222"
-  backend:
-    build:
-      context: ./packages/backend
-    depends_on:
-      - nats
-      - livekit
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./packages/backend/src:/app/src
-    env_file:
-      - .env
-    environment:
-      - PORT=8080
-      - NATS=nats:8222
-  egress:
-    build: 
-      context: .
-      dockerfile: Dockerfile.go
-    env_file:
-      - .env
-    environment: 
-      - COMPOSITOR_INSTANCE=http://frontend:3000
-      - LIVEKIT_INSTANCE=http://livekit:7880
-      - ROOM=stream
-    depends_on:
-      - frontend
+      - ./redis.conf:/etc/redis.conf
